@@ -1,0 +1,89 @@
+---
+title: Measuring NC job loss from Covid-19
+author: Frank Muraca
+date: '2020-04-22'
+slug: measuring-nc-job-loss-from-covid-19
+categories: []
+tags: []
+Categories:
+  - Development
+  - GoLang
+Description: ''
+Tags:
+  - Development
+  - golang
+menu: main
+---
+Over the past four weeks, more than 20 million people [have filed for unenmployment](https://www.nytimes.com/2020/04/16/business/economy/unemployment-numbers-coronavirus.html) as the country adjusts economic fallout of Covid-19. While we still don't know the longterm impacts of the pandemic, swift and widespread job loss puts pressure on millions of Americans rising medical, housing, and school-related costs. 
+
+In mid-April the Urban Institute [released new estimates](https://datacatalog.urban.org/dataset/estimated-low-income-jobs-lost-covid-19) of the number of low-income jobs (<$40k salary) lost as a result of Covid-19. In this post, we'll use this data to measure job loss in North Carolina while adding some simple Census data for additional context. 
+
+## The data!
+
+The estimates rely on three sources of data - the BLS, Washington State Employment Security Deparment, and 2017 LODES data - to predict job loss counts for every census tract in the US. Washington State publishes weekly unemployment claims by industry sector and are used for this analysis until the BLS releases national unemployment figures by industry in May. The full methodology is [here.](https://github.com/UrbanInstitute/covid-neighborhood-job-analysis)
+
+The dataset also has a file for job loss by county which we'll use first.
+
+```{r, message=FALSE, warning=FALSE}
+# We'll be using the following packages:
+library(geojsonsf)
+library(sf)
+library(tidyverse)
+library(hrbrthemes)
+library(scales)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# The Urban Institute included a codebook for each of the 21 industries. We'll rename the values so we know which industries to look at.
+
+covid_county <- geojson_sf("https://ui-lodes-job-change-public.s3.amazonaws.com/sum_job_loss_county.geojson")
+industry_codebook <- read_csv("https://ui-lodes-job-change-public.s3.amazonaws.com/lehd_types_s3.csv")
+
+covid_county <- rename(covid_county,
+                       Total_Job_Loss = X000,
+                       Agricultue = X01,
+                       Mining = X02,
+                       Utilities = X03,
+                       Construction = X04,
+                       Manufacturing = X05,
+                       `Wholesale Trade` = X06,
+                       Retail = X07,
+                       Transportation = X08,
+                       Information = X09,
+                       `Finance & Insurance` = X10,
+                       `Real Estate` = X11,
+                       `Professional Services` = X12,
+                       Management = X13,
+                       `Admin Support` = X14,
+                       Education = X15,
+                       `Health Care` = X16,
+                       `Arts Entertainment` = X17,
+                       `Food & Accomodation` = X18,
+                       `Other Service` = X19,
+                       `Public Admin` = X20)
+
+```
+
+The file we downloaded includes all the counties in the US. Let's only select North Carolina. We'll then visualize the the top 15 counties by total job loss using a [lollipop plot.](https://www.r-graph-gallery.com/lollipop-plot.html) 
+
+```{r, warning=FALSE, message=FALSE}
+covid_county_NC <- covid_county %>%
+  filter(state_name =="North Carolina")
+
+county_viz_losstotal <- covid_county_NC %>%
+  arrange(desc(Total_Job_Loss)) %>%
+  top_n(Total_Job_Loss,n=15) %>%
+  select(county_name,Total_Job_Loss) %>%
+  ggplot(aes(x=reorder(county_name,Total_Job_Loss),y=Total_Job_Loss)) +
+  geom_point() +
+  geom_segment(aes(x=county_name,xend=county_name,y=0,yend=Total_Job_Loss)) +
+  coord_flip() +
+  theme_ipsum() +
+  scale_y_comma() +
+  labs(y="Total Job Loss",
+       title="Estimated Job Loss from Covid-19: Top 15 Counties in North Carolina",
+       subtitle = "Total jobs w/ salaries <$40k",
+       caption="",
+       x=NULL) 
+county_viz_losstotal
+```

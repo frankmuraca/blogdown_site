@@ -5,14 +5,10 @@ date: '2020-04-22'
 slug: measuring-nc-job-loss-from-covid-19
 categories: []
 tags: []
-Categories:
-  - Development
-  - GoLang
 Description: ''
 Tags:
-  - Development
-  - golang
-menu: main
+  - Covid-19
+  - Economic Development
 ---
 Over the past four weeks, more than 20 million people [have filed for unenmployment](https://www.nytimes.com/2020/04/16/business/economy/unemployment-numbers-coronavirus.html) as the country adjusts economic fallout of Covid-19. While we still don't know the longterm impacts of the pandemic, swift and widespread job loss puts pressure on millions of Americans rising medical, housing, and school-related costs. 
 

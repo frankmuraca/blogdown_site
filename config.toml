@@ -1,7 +1,7 @@
 baseurl = "/"
 relativeurls = true
 languageCode = "en-us"
-title = "Data for Planners"
+title = "Planning with Data"
 theme = "hyde"
 googleAnalytics = ""
 disqusShortname = ""
@@ -25,7 +25,7 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 
 [params]
-    description = "Frank Muraca"
+    description = "Helping planners understand their communities with data & analytics"
     # Change contactHeader text
     # Or comment out to use <hr> instead
     contactHeader = "Contact Me"

@@ -67,19 +67,21 @@ covid_county_NC <- covid_county %>%
   filter(state_name =="North Carolina")
 
 county_viz_losstotal <- covid_county_NC %>%
-  arrange(desc(Total_Job_Loss)) %>%
-  top_n(Total_Job_Loss,n=15) %>%
+  arrange(desc(Total_Job_Loss)) %>% ## put highest job loss counties at the top
+  top_n(Total_Job_Loss,n=15) %>% ## select top 15
   select(county_name,Total_Job_Loss) %>%
   ggplot(aes(x=reorder(county_name,Total_Job_Loss),y=Total_Job_Loss)) +
   geom_point() +
   geom_segment(aes(x=county_name,xend=county_name,y=0,yend=Total_Job_Loss)) +
   coord_flip() +
-  theme_ipsum() +
-  scale_y_comma() +
+  theme_minimal() +
+  scale_y_comma(limits=c(0,52000)) +
   labs(y="Total Job Loss",
-       title="Estimated Job Loss from Covid-19: Top 15 Counties in North Carolina",
-       subtitle = "Total jobs w/ salaries <$40k",
-       caption="",
+       title="Estimated Job Loss from Covid-19",
+       subtitle = "Top 15 Counties in NC, Jobs w/ salaries <$40k",
+       caption="@FrankMuraca, Data Source: Urban Institute",
        x=NULL) 
 county_viz_losstotal
 ```
+
+Unsurprisingly, job loss is highest in North Carolina's seven metro counties - with Raleigh and Charlotte accounting for about **20%** of jobs lost in the state.

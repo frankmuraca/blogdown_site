@@ -57,20 +57,21 @@ covid_county &lt;- rename(covid_county,
   filter(state_name ==&quot;North Carolina&quot;)
 
 county_viz_losstotal &lt;- covid_county_NC %&gt;%
-  arrange(desc(Total_Job_Loss)) %&gt;%
-  top_n(Total_Job_Loss,n=15) %&gt;%
+  arrange(desc(Total_Job_Loss)) %&gt;% ## put highest job loss counties at the top
+  top_n(Total_Job_Loss,n=15) %&gt;% ## select top 15
   select(county_name,Total_Job_Loss) %&gt;%
   ggplot(aes(x=reorder(county_name,Total_Job_Loss),y=Total_Job_Loss)) +
   geom_point() +
   geom_segment(aes(x=county_name,xend=county_name,y=0,yend=Total_Job_Loss)) +
   coord_flip() +
-  theme_ipsum() +
-  scale_y_comma() +
+  theme_minimal() +
+  scale_y_comma(limits=c(0,52000)) +
   labs(y=&quot;Total Job Loss&quot;,
-       title=&quot;Estimated Job Loss from Covid-19: Top 15 Counties in North Carolina&quot;,
-       subtitle = &quot;Total jobs w/ salaries &lt;$40k&quot;,
-       caption=&quot;&quot;,
+       title=&quot;Estimated Job Loss from Covid-19&quot;,
+       subtitle = &quot;Top 15 Counties in NC, Jobs w/ salaries &lt;$40k&quot;,
+       caption=&quot;@FrankMuraca, Data Source: Urban Institute&quot;,
        x=NULL) 
 county_viz_losstotal</code></pre>
 <p><img src="/post/2020-04-22-measuring-nc-job-loss-from-covid-19_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Unsurprisingly, job loss is highest in North Carolina’s seven metro counties - with Raleigh and Charlotte accounting for about <strong>20%</strong> of jobs lost in the state.</p>
 </div>

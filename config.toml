@@ -13,9 +13,7 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 [[menu.main]]
     name = "About"
     url = "/about/"
-[[menu.main]]
-    name = "Posts"
-    url = "/post/"
+
 [[menu.contact]]
     name = "GitHub"
     url = "https://github.com/frankmuraca"
@@ -26,6 +24,7 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 [params]
     description = "Helping planners understand their communities with data & analytics"
+    n_posts_front = 5
     # Change contactHeader text
     # Or comment out to use <hr> instead
     contactHeader = "Contact Me"

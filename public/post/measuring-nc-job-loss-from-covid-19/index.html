@@ -24,21 +24,21 @@
 
 		
 
-		<link rel="stylesheet" href="../../../../font-awesome/css/font-awesome.min.css" type="text/css">
-		<link rel="stylesheet" href="../../../../css/poole.css">
-		<link rel="stylesheet" href="../../../../css/syntax.css">
-		<link rel="stylesheet" href="../../../../css/hyde.css">
+		<link rel="stylesheet" href="../../font-awesome/css/font-awesome.min.css" type="text/css">
+		<link rel="stylesheet" href="../../css/poole.css">
+		<link rel="stylesheet" href="../../css/syntax.css">
+		<link rel="stylesheet" href="../../css/hyde.css">
 		
 		
 		<link href="" rel="alternate" type="application/rss+xml" title="Planning with Data">
-		<link href="../../../../2020/04/22/measuring-nc-job-loss-from-covid-19" rel="canonical">
+		<link href="../../post/measuring-nc-job-loss-from-covid-19" rel="canonical">
 	</head>
 
 	<body class="theme-base-0d  h-entry">
 		<main class="content container" role="main">
 			<article class="post">
 				<header>
-					<a class="u-url" href="../../../../2020/04/22/measuring-nc-job-loss-from-covid-19">
+					<a class="u-url" href="../../post/measuring-nc-job-loss-from-covid-19">
 						<h1 class="post-title p-name">Measuring NC job loss from Covid-19</h1>
 					</a>
 					<time class="post-date dt-published" datetime="2020-04-22T00:00:00Z">Wednesday, 22 April 2020</time>
@@ -106,86 +106,8 @@ county_viz_losstotal &lt;- covid_county_NC %&gt;%
        caption=&quot;@FrankMuraca, Data Source: Urban Institute&quot;,
        x=NULL) 
 county_viz_losstotal</code></pre>
-<p><img src="../../../../post/2020-04-22-measuring-nc-job-loss-from-covid-19_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
-<p>Unsurprisingly, job loss is highest in North Carolina’s seven metro counties - with Raleigh and Charlotte accounting for about <strong>20%</strong> of jobs lost in the state. Now let’s see if the same is true when looking at job loss as a <strong>percentage of the overall labor force.</strong></p>
-<p>Let’s use the <a href="https://walkerke.github.io/tidycensus/articles/basic-usage.html"><code>tidycensus</code></a> package to pull labor force estimates for each county in the state. If you’re a longtime American Factfinder user (<a href="https://data.census.gov/cedsci/deeplinks?url=https%3A%2F%2Ffactfinder.census.gov%2F&amp;tid=GOVSTIMESERIES.CG00ORG01">RIP</a>), this is a great tool to quickly grab Census data over many years and for different geographies.</p>
-<div class="alert alert-info">
-<p>Note: The Tidycensus requires an API key, <a href="https://api.census.gov/data/key_signup.html">which can be acquired here.</a></p>
-</div>
-<pre class="r"><code>library(tidycensus)
-census_api_key(&quot;ad2c6554a53beeff954ff8a4b291b02f053d3d31&quot;,overwrite = TRUE)</code></pre>
-<pre class="r"><code>library(tidycensus) 
-
-county_laborforce &lt;- get_acs(variables = c(civilian_lf = &quot;B23025_003&quot;), ## The variable code for civilian labor force
-                             year = 2018,
-                             state=&quot;NC&quot;,
-                             geography=&quot;county&quot;) %&gt;%
-  mutate(NAME=str_remove(NAME, &quot; County, North Carolina&quot;)) ## Clean up county name column so we can merge with the job loss dataframe
-
-
-covid_county_NC &lt;- merge(covid_county_NC,
-                         county_laborforce,
-                         by.x=&#39;county_name&#39;,
-                         by.y =&#39;NAME&#39; )
-
-## Recreate job loss by county but as percentage of overall labor force
-
-county_viz_losslbf &lt;- covid_county_NC %&gt;%
-  mutate(pctlbf = Total_Job_Loss/estimate) %&gt;% ## &quot;Estimate&quot; stands in for labor force
-  arrange(desc(pctlbf)) %&gt;%
-  top_n(pctlbf,n=15) %&gt;%
-  select(county_name,pctlbf) %&gt;%
-  ggplot(aes(x=reorder(county_name,pctlbf),y=pctlbf)) +
-  geom_point() +
-  geom_segment(aes(x=county_name,xend=county_name,y=0,yend=pctlbf)) +
-  coord_flip() +
-  theme_minimal() +
-  scale_y_percent(limits = c(0,.20)) +
-  labs(y=&quot;Job Loss as Percentage of Labor Force&quot;,
-      title=&quot;Estimated Job Loss from Covid-19 (% of Labor Force)&quot;,
-       subtitle = &quot;Top 15 Counties in NC, Jobs w/ salaries &lt;$40k&quot;,
-       caption = &quot;@FrankMuraca, Data Source: Urban Institute&quot;,
-       x=NULL) 
-
-county_viz_losslbf</code></pre>
-<p><img src="../../../../post/2020-04-22-measuring-nc-job-loss-from-covid-19_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
-<p>When we look at job loss as percentage of overall labor force, North Carolina’s more rural counties are hardest hit by the economic fall out of Covid-19. Let’s use the <code>tmap</code> package to compare these two graphs.</p>
-<pre class="r"><code>library(tmap)</code></pre>
-<pre><code>## Warning: package &#39;tmap&#39; was built under R version 3.6.2</code></pre>
-<pre class="r"><code>map_county_totalloss &lt;- covid_county_NC %&gt;%
-  tm_shape() +
-  tm_polygons(c(&quot;Total_Job_Loss&quot;), # Variable we want to visualize
-              title = c(&quot;Total Job Loss by County&quot;),
-              style= &quot;cont&quot;,
-              palette = &quot;seq&quot;,
-              border.col = NULL) + # This formats the numbers in the legend
-  tm_legend(legend.position = c(&quot;left&quot;, &quot;top&quot;))
-
-map_county_pctlbf &lt;- covid_county_NC %&gt;%
-  mutate(pctlbf = (Total_Job_Loss/estimate)*100) %&gt;%
-  tm_shape() +
-  tm_polygons(c(&quot;pctlbf&quot;), # Variable we want to visualize
-              title = c(&quot;Job Loss as % of Labor Force&quot;),
-              style= &quot;cont&quot;,
-              palette = &quot;seq&quot;,
-              border.col = NULL,
-              legend.format=c(list(fun=function(x) paste0(formatC(x, digits=0, format=&quot;f&quot;), &quot;%&quot;)))) + # This formats the numbers in the legend
-  tm_legend(legend.position = c(&quot;left&quot;, &quot;top&quot;))
-
-library(grid) # Use the grid package the stack the two maps
-grid.newpage()
-
-pushViewport(viewport(layout = grid.layout(2,1)))
-print(map_county_totalloss,vp=viewport(layout.pos.row = 1))
-print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))</code></pre>
-<p><img src="../../../../post/2020-04-22-measuring-nc-job-loss-from-covid-19_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
-</div>
-<div id="what-industries-are-hardest-hit" class="section level2">
-<h2>What industries are hardest hit?</h2>
-</div>
-<div id="census-tract-impact" class="section level2">
-<h2>Census Tract impact</h2>
-<p>Up until now, we’ve been using the Urban Institute estimates at the county level. Let’s pivot</p>
+<p><img src="../../post/2020-04-22-measuring-nc-job-loss-from-covid-19_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Unsurprisingly, job loss is highest in North Carolina’s seven metro counties - with Raleigh and Charlotte accounting for about <strong>20%</strong> of jobs lost in the state.</p>
 </div>
 
 				</main>
@@ -195,9 +117,9 @@ print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))</code></pre>
 					<p>
 						Tags:
 						
-						<a class="p-category" href="../../../../tags/covid-19/">Covid-19</a>
+						<a class="p-category" href="../../tags/covid-19/">Covid-19</a>
 						
-						<a class="p-category" href="../../../../tags/economic-development/">Economic Development</a>
+						<a class="p-category" href="../../tags/economic-development/">Economic Development</a>
 						
 
 					</p>
@@ -212,7 +134,7 @@ print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))</code></pre>
 
 					
 					<span class="site-title u-name fn">
-					  <a class="u-url u-uid" rel="me" href="../../../../">Planning with Data</a>
+					  <a class="u-url u-uid" rel="me" href="../../">Planning with Data</a>
 				  </span>
 					
 
@@ -223,9 +145,7 @@ print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))</code></pre>
 					<nav>
 						<ul class="sidebar-nav">
 							
-							<li><a href="../../../../about/"> About </a></li>
-							
-							<li><a href="../../../../post/"> Posts </a></li>
+							<li><a href="../../about/"> About </a></li>
 							
 						</ul>
 					</nav>
@@ -285,7 +205,7 @@ print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))</code></pre>
 
  
   
-<script src="../../../../js/math-code.js"></script>
+<script src="../../js/math-code.js"></script>
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
   tex2jax: {

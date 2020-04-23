@@ -10,6 +10,18 @@ Tags:
   - Covid-19
   - Economic Development
 ---
+```{r, echo=FALSE}
+knitr::knit_hooks$set(
+   message = function(x, options) {
+     paste('\n\n<div class="alert alert-info">',
+           gsub('##', '\n', x),
+           '</div>', sep = '\n')
+   }
+)
+
+
+```
+
 Over the past four weeks, more than 20 million people [have filed for unenmployment](https://www.nytimes.com/2020/04/16/business/economy/unemployment-numbers-coronavirus.html) as the country adjusts economic fallout of Covid-19. While we still don't know the longterm impacts of the pandemic, swift and widespread job loss puts pressure on millions of Americans rising medical, housing, and school-related costs. 
 
 In mid-April the Urban Institute [released new estimates](https://datacatalog.urban.org/dataset/estimated-low-income-jobs-lost-covid-19) of the number of low-income jobs (<$40k salary) lost as a result of Covid-19. In this post, we'll use this data to measure job loss in North Carolina while adding some simple Census data for additional context. 
@@ -84,4 +96,98 @@ county_viz_losstotal <- covid_county_NC %>%
 county_viz_losstotal
 ```
 
-Unsurprisingly, job loss is highest in North Carolina's seven metro counties - with Raleigh and Charlotte accounting for about **20%** of jobs lost in the state.
+Unsurprisingly, job loss is highest in North Carolina's seven metro counties - with Raleigh and Charlotte accounting for about **20%** of jobs lost in the state. Now let's see if the same is true when looking at job loss as a **percentage of the overall labor force.** 
+
+Let's use the [`tidycensus`](https://walkerke.github.io/tidycensus/articles/basic-usage.html) package to pull labor force estimates for each county in the state. If you're a longtime American Factfinder user ([RIP](https://data.census.gov/cedsci/deeplinks?url=https%3A%2F%2Ffactfinder.census.gov%2F&tid=GOVSTIMESERIES.CG00ORG01)), this is a great tool to quickly grab Census data over many years and for different geographies.
+
+```{r, echo=FALSE}
+message("Note: The Tidycensus requires an API key, [which can be acquired here.](https://api.census.gov/data/key_signup.html)")
+
+```
+
+```{r, message=FALSE,warning=FALSE}
+library(tidycensus)
+census_api_key("ad2c6554a53beeff954ff8a4b291b02f053d3d31",overwrite = TRUE)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(tidycensus) 
+
+county_laborforce <- get_acs(variables = c(civilian_lf = "B23025_003"), ## The variable code for civilian labor force
+                             year = 2018,
+                             state="NC",
+                             geography="county") %>%
+  mutate(NAME=str_remove(NAME, " County, North Carolina")) ## Clean up county name column so we can merge with the job loss dataframe
+
+
+covid_county_NC <- merge(covid_county_NC,
+                         county_laborforce,
+                         by.x='county_name',
+                         by.y ='NAME' )
+
+## Recreate job loss by county but as percentage of overall labor force
+
+county_viz_losslbf <- covid_county_NC %>%
+  mutate(pctlbf = Total_Job_Loss/estimate) %>% ## "Estimate" stands in for labor force
+  arrange(desc(pctlbf)) %>%
+  top_n(pctlbf,n=15) %>%
+  select(county_name,pctlbf) %>%
+  ggplot(aes(x=reorder(county_name,pctlbf),y=pctlbf)) +
+  geom_point() +
+  geom_segment(aes(x=county_name,xend=county_name,y=0,yend=pctlbf)) +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_percent(limits = c(0,.20)) +
+  labs(y="Job Loss as Percentage of Labor Force",
+      title="Estimated Job Loss from Covid-19 (% of Labor Force)",
+       subtitle = "Top 15 Counties in NC, Jobs w/ salaries <$40k",
+       caption = "@FrankMuraca, Data Source: Urban Institute",
+       x=NULL) 
+
+county_viz_losslbf
+
+```
+
+When we look at job loss as percentage of overall labor force, North Carolina's more rural counties are hardest hit by the economic fall out of Covid-19. Let's use the `tmap` package to compare these two graphs.
+
+```{r,message=FALSE}
+
+library(tmap)
+map_county_totalloss <- covid_county_NC %>%
+  tm_shape() +
+  tm_polygons(c("Total_Job_Loss"), # Variable we want to visualize
+              title = c("Total Job Loss by County"),
+              style= "cont",
+              palette = "seq",
+              border.col = NULL) + # This formats the numbers in the legend
+  tm_legend(legend.position = c("left", "top"))
+
+map_county_pctlbf <- covid_county_NC %>%
+  mutate(pctlbf = (Total_Job_Loss/estimate)*100) %>%
+  tm_shape() +
+  tm_polygons(c("pctlbf"), # Variable we want to visualize
+              title = c("Job Loss as % of Labor Force"),
+              style= "cont",
+              palette = "seq",
+              border.col = NULL,
+              legend.format=c(list(fun=function(x) paste0(formatC(x, digits=0, format="f"), "%")))) + # This formats the numbers in the legend
+  tm_legend(legend.position = c("left", "top"))
+
+library(grid) # Use the grid package the stack the two maps
+grid.newpage()
+
+pushViewport(viewport(layout = grid.layout(2,1)))
+print(map_county_totalloss,vp=viewport(layout.pos.row = 1))
+print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))
+
+
+```
+
+## What industries are hardest hit?
+
+
+
+## Census Tract impact
+
+Up until now, we've been using the Urban Institute estimates at the county level. Let's pivot 

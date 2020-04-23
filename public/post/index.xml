@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on A Hugo website</title>
+    <title>Posts on Planning with Data</title>
     <link>/post/</link>
-    <description>Recent content in Posts on A Hugo website</description>
+    <description>Recent content in Posts on Planning with Data</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 30 Dec 2016 21:49:57 -0700</lastBuildDate>
+    <lastBuildDate>Wed, 22 Apr 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Measuring NC job loss from Covid-19</title>
+      <link>/2020/04/22/measuring-nc-job-loss-from-covid-19/</link>
+      <pubDate>Wed, 22 Apr 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/04/22/measuring-nc-job-loss-from-covid-19/</guid>
+      <description>Over the past four weeks, more than 20 million people have filed for unenmployment as the country adjusts economic fallout of Covid-19. While we still don’t know the longterm impacts of the pandemic, swift and widespread job loss puts pressure on millions of Americans rising medical, housing, and school-related costs.
+In mid-April the Urban Institute released new estimates of the number of low-income jobs (&amp;lt;$40k salary) lost as a result of Covid-19.</description>
+    </item>
     
     <item>
       <title>A Plain Markdown Post</title>

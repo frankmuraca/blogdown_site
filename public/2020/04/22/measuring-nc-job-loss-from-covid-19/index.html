@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en-US">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+
+		
+		<title>Measuring NC job loss from Covid-19 &middot; Planning with Data</title>
+		
+
+		
+			
+		
+
+		
+
+		
+		
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.11.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+		
+
+		<link rel="stylesheet" href="../../../../font-awesome/css/font-awesome.min.css" type="text/css">
+		<link rel="stylesheet" href="../../../../css/poole.css">
+		<link rel="stylesheet" href="../../../../css/syntax.css">
+		<link rel="stylesheet" href="../../../../css/hyde.css">
+		
+		
+		<link href="" rel="alternate" type="application/rss+xml" title="Planning with Data">
+		<link href="../../../../2020/04/22/measuring-nc-job-loss-from-covid-19" rel="canonical">
+	</head>
+
+	<body class="theme-base-0d  h-entry">
+		<main class="content container" role="main">
+			<article class="post">
+				<header>
+					<a class="u-url" href="../../../../2020/04/22/measuring-nc-job-loss-from-covid-19">
+						<h1 class="post-title p-name">Measuring NC job loss from Covid-19</h1>
+					</a>
+					<time class="post-date dt-published" datetime="2020-04-22T00:00:00Z">Wednesday, 22 April 2020</time>
+				</header>
+				<main class="post-content e-content">
+					
+
+
+<p>Over the past four weeks, more than 20 million people <a href="https://www.nytimes.com/2020/04/16/business/economy/unemployment-numbers-coronavirus.html">have filed for unenmployment</a> as the country adjusts economic fallout of Covid-19. While we still don’t know the longterm impacts of the pandemic, swift and widespread job loss puts pressure on millions of Americans rising medical, housing, and school-related costs.</p>
+<p>In mid-April the Urban Institute <a href="https://datacatalog.urban.org/dataset/estimated-low-income-jobs-lost-covid-19">released new estimates</a> of the number of low-income jobs (&lt;$40k salary) lost as a result of Covid-19. In this post, we’ll use this data to measure job loss in North Carolina while adding some simple Census data for additional context.</p>
+<div id="the-data" class="section level2">
+<h2>The data!</h2>
+<p>The estimates rely on three sources of data - the BLS, Washington State Employment Security Deparment, and 2017 LODES data - to predict job loss counts for every census tract in the US. Washington State publishes weekly unemployment claims by industry sector and are used for this analysis until the BLS releases national unemployment figures by industry in May. The full methodology is <a href="https://github.com/UrbanInstitute/covid-neighborhood-job-analysis">here.</a></p>
+<p>The dataset also has a file for job loss by county which we’ll use first.</p>
+<pre class="r"><code># We&#39;ll be using the following packages:
+library(geojsonsf)
+library(sf)
+library(tidyverse)
+library(hrbrthemes)
+library(scales)</code></pre>
+<pre class="r"><code># The Urban Institute included a codebook for each of the 21 industries. We&#39;ll rename the values so we know which industries to look at.
+
+covid_county &lt;- geojson_sf(&quot;https://ui-lodes-job-change-public.s3.amazonaws.com/sum_job_loss_county.geojson&quot;)
+industry_codebook &lt;- read_csv(&quot;https://ui-lodes-job-change-public.s3.amazonaws.com/lehd_types_s3.csv&quot;)
+
+covid_county &lt;- rename(covid_county,
+                       Total_Job_Loss = X000,
+                       Agricultue = X01,
+                       Mining = X02,
+                       Utilities = X03,
+                       Construction = X04,
+                       Manufacturing = X05,
+                       `Wholesale Trade` = X06,
+                       Retail = X07,
+                       Transportation = X08,
+                       Information = X09,
+                       `Finance &amp; Insurance` = X10,
+                       `Real Estate` = X11,
+                       `Professional Services` = X12,
+                       Management = X13,
+                       `Admin Support` = X14,
+                       Education = X15,
+                       `Health Care` = X16,
+                       `Arts Entertainment` = X17,
+                       `Food &amp; Accomodation` = X18,
+                       `Other Service` = X19,
+                       `Public Admin` = X20)</code></pre>
+<p>The file we downloaded includes all the counties in the US. Let’s only select North Carolina. We’ll then visualize the the top 15 counties by total job loss using a <a href="https://www.r-graph-gallery.com/lollipop-plot.html">lollipop plot.</a></p>
+<pre class="r"><code>covid_county_NC &lt;- covid_county %&gt;%
+  filter(state_name ==&quot;North Carolina&quot;)
+
+county_viz_losstotal &lt;- covid_county_NC %&gt;%
+  arrange(desc(Total_Job_Loss)) %&gt;%
+  top_n(Total_Job_Loss,n=15) %&gt;%
+  select(county_name,Total_Job_Loss) %&gt;%
+  ggplot(aes(x=reorder(county_name,Total_Job_Loss),y=Total_Job_Loss)) +
+  geom_point() +
+  geom_segment(aes(x=county_name,xend=county_name,y=0,yend=Total_Job_Loss)) +
+  coord_flip() +
+  theme_ipsum() +
+  scale_y_comma() +
+  labs(y=&quot;Total Job Loss&quot;,
+       title=&quot;Estimated Job Loss from Covid-19: Top 15 Counties in North Carolina&quot;,
+       subtitle = &quot;Total jobs w/ salaries &lt;$40k&quot;,
+       caption=&quot;&quot;,
+       x=NULL) 
+county_viz_losstotal</code></pre>
+<p><img src="../../../../post/2020-04-22-measuring-nc-job-loss-from-covid-19_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
+
+				</main>
+				<footer class="footer">
+					
+					<span>
+						Category:
+						
+						<a class="p-category" href="../../../../categories/development/">Development</a>
+						
+						<a class="p-category" href="../../../../categories/golang/">GoLang</a>
+						
+					</span>
+					
+					
+					<p>
+						Tags:
+						
+						<a class="p-category" href="../../../../tags/development/">Development</a>
+						
+						<a class="p-category" href="../../../../tags/golang/">golang</a>
+						
+
+					</p>
+					
+				</footer>
+			</article>
+		</main>
+				<aside class="sidebar">
+			<div class="container sidebar-sticky">
+				<header class="sidebar-about h-card vcard p-author">
+					
+
+					
+					<span class="site-title u-name fn">
+					  <a class="u-url u-uid" rel="me" href="../../../../">Planning with Data</a>
+				  </span>
+					
+
+					<p class="lead p-note">
+						 Helping planners understand their communities with data &amp; analytics 
+					</p>
+
+					<nav>
+						<ul class="sidebar-nav">
+							
+							<li><a href="../../../../about/"> About </a></li>
+							
+							<li><a href="../../../../2020/04/22/measuring-nc-job-loss-from-covid-19/"> Measuring NC job loss from Covid-19 </a></li>
+							
+							<li><a href="../../../../post/"> Posts </a></li>
+							
+						</ul>
+					</nav>
+
+					
+						<aside class="contact">
+						  
+							  <h3 class="contact-head">Contact Me</h3>
+						  
+							<ul class="contact-list">
+								
+								<li>
+									
+									  
+		  						    <i class='fa fa-github fa-fw'></i>
+		  						  
+		  							<a href="https://github.com/frankmuraca" class="u-url url" rel="me">
+		  							  GitHub
+		  							</a>
+								
+								</li>
+								
+								<li>
+									
+									  
+		  						    <i class='fa fa-twitter fa-fw'></i>
+		  						  
+		  							<a href="https://twitter.com/frankmuraca" class="u-url url" rel="me">
+		  							  Twitter
+		  							</a>
+								
+								</li>
+								
+							</ul>
+						</aside>
+					
+				</header>
+
+				<footer>&copy; 2020. All rights reserved. </footer>
+			</div>
+		</aside>
+
+		  <footer>
+  
+  
+  
+  
+
+  <script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
+  
+  
+  
+  <script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/r.min.js"></script>
+  <script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/yaml.min.js"></script>
+  <script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+  
+
+ 
+  
+<script src="../../../../js/math-code.js"></script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    processEscapes: true
+  }
+});
+</script>
+<script async src="//cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+  
+  </footer>
+  </body>
+</html>
+
+	</body>
+</html>

@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>A Hugo website</title>
+    <title>Planning with Data</title>
     <link>/</link>
-    <description>Recent content on A Hugo website</description>
+    <description>Recent content on Planning with Data</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 05 May 2016 21:48:51 -0700</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Measuring NC job loss from Covid-19</title>
+      <link>/2020/04/22/measuring-nc-job-loss-from-covid-19/</link>
+      <pubDate>Wed, 22 Apr 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/04/22/measuring-nc-job-loss-from-covid-19/</guid>
+      <description>Over the past four weeks, more than 20 million people have filed for unenmployment as the country adjusts economic fallout of Covid-19. While we still don’t know the longterm impacts of the pandemic, swift and widespread job loss puts pressure on millions of Americans rising medical, housing, and school-related costs.
+In mid-April the Urban Institute released new estimates of the number of low-income jobs (&amp;lt;$40k salary) lost as a result of Covid-19.</description>
+    </item>
     
     <item>
       <title>A Plain Markdown Post</title>
@@ -27,7 +37,7 @@
       <pubDate>Thu, 05 May 2016 21:48:51 -0700</pubDate>
       
       <guid>/about/</guid>
-      <description>This is a &amp;ldquo;hello world&amp;rdquo; example website for the blogdown package. The theme was forked from @alanpearce/hyde &amp;ndash; which was itself forked from the original Hugo port by @spf13/hyde &amp;ndash; and modified by Garrick Aden-Buie following the guidance provided from Yihui Xie&amp;rsquo;s hugo-lithium-theme.</description>
+      <description>Hi! This is a blog for city planners who wish to better understand changes and challenges in their communities using data and visualizations. We write about common planning problems in areas such as housing, transportation, land use, or economic development and demonstrate how data visualizations can give communities the tools to address emerging issues. Most of these posts will profile techniques in R, an open-source sofitware that let&amp;rsquo;s you manipulate and visualize different sources of information.</description>
     </item>
     
     <item>

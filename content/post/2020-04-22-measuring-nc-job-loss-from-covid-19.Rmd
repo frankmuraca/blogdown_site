@@ -1,7 +1,7 @@
 ---
 title: Measuring NC job loss from Covid-19
 author: Frank Muraca
-date: '2020-04-22'
+date: '2020-04-25'
 slug: measuring-nc-job-loss-from-covid-19
 categories: []
 tags: []
@@ -22,15 +22,17 @@ knitr::knit_hooks$set(
 
 ```
 
-Over the past four weeks, more than 20 million people [have filed for unenmployment](https://www.nytimes.com/2020/04/16/business/economy/unemployment-numbers-coronavirus.html) as the country adjusts economic fallout of Covid-19. While we still don't know the longterm impacts of the pandemic, swift and widespread job loss puts pressure on millions of Americans rising medical, housing, and school-related costs. 
+Over the past four weeks, more than 20 million people [have filed for unenmployment](https://www.nytimes.com/2020/04/16/business/economy/unemployment-numbers-coronavirus.html) as the country adjusts to the economic fallout of Covid-19. While we still don't know the longterm impacts of the pandemic, widespread job loss creates an immediate need for Americans without savings to cover their cost of living. 
 
-In mid-April the Urban Institute [released new estimates](https://datacatalog.urban.org/dataset/estimated-low-income-jobs-lost-covid-19) of the number of low-income jobs (<$40k salary) lost as a result of Covid-19. In this post, we'll use this data to measure job loss in North Carolina while adding some simple Census data for additional context. 
+What do we know about the people and places that have been most impacted by the recent shock in unemployment?
 
-## The data!
+In mid-April the Urban Institute [released new estimates](https://datacatalog.urban.org/dataset/estimated-low-income-jobs-lost-covid-19) on the number of low-income jobs (<$40k salary) lost as a result of Covid-19. In this post, we'll use this data to figure out where job loss is most prevalent in North Carolina. 
 
-The estimates rely on three sources of data - the BLS, Washington State Employment Security Deparment, and 2017 LODES data - to predict job loss counts for every census tract in the US. Washington State publishes weekly unemployment claims by industry sector and are used for this analysis until the BLS releases national unemployment figures by industry in May. The full methodology is [here.](https://github.com/UrbanInstitute/covid-neighborhood-job-analysis)
+## The data
 
-The dataset also has a file for job loss by county which we'll use first.
+The estimates rely on unemployment reports from Washington State and New York State that include job losses by industry. To calculate job loss for Census tracts elsewhere in the country, those estimates are applied to state-level job loss estimates reported by the Bureau of Labor Statistics. The full methodology is [here.](https://www.urban.org/sites/default/files/where_low-income_jobs_are_being_lost_to_covid-19_technical_appendix_04232020.pdf)
+
+The Urban Institute provides two separate files for county and tract estimates. Let's start with counties:
 
 ```{r, message=FALSE, warning=FALSE}
 # We'll be using the following packages:
@@ -42,49 +44,45 @@ library(scales)
 ```
 
 ```{r, message=FALSE, warning=FALSE}
-# The Urban Institute included a codebook for each of the 21 industries. We'll rename the values so we know which industries to look at.
+# Let's pull in the county-level data and subset the file to only include counties in North Carolina. We'll also remove the word "County" from the names to make it more readable later.
 
-covid_county <- geojson_sf("https://ui-lodes-job-change-public.s3.amazonaws.com/sum_job_loss_county.geojson")
+county <- geojson_sf("https://ui-lodes-job-change-public.s3.amazonaws.com/sum_job_loss_county.geojson") %>% 
+  filter(state_name=="North Carolina") %>%
+  mutate(county_name = str_remove(county_name," County"))
+
+colnames(county)
+
+# The industries are coded as "X01", "X02", "X03", and so on. The Urban Institute also provides a codebook that we'll use to rename each of the 21 industries. 
+
 industry_codebook <- read_csv("https://ui-lodes-job-change-public.s3.amazonaws.com/lehd_types_s3.csv")
 
-covid_county <- rename(covid_county,
-                       Total_Job_Loss = X000,
-                       Agricultue = X01,
-                       Mining = X02,
-                       Utilities = X03,
-                       Construction = X04,
-                       Manufacturing = X05,
-                       `Wholesale Trade` = X06,
-                       Retail = X07,
-                       Transportation = X08,
-                       Information = X09,
-                       `Finance & Insurance` = X10,
-                       `Real Estate` = X11,
-                       `Professional Services` = X12,
-                       Management = X13,
-                       `Admin Support` = X14,
-                       Education = X15,
-                       `Health Care` = X16,
-                       `Arts Entertainment` = X17,
-                       `Food & Accomodation` = X18,
-                       `Other Service` = X19,
-                       `Public Admin` = X20)
+## Break out industry variables into new dataframe
+industry <- county %>% select(starts_with("X"), -geometry)  
+
+## Replace industry variable names based on matched name from the codebook
+names(industry) <- industry_codebook$lehd_name[match(names(industry),industry_codebook$lehd_var)]
+
+county <- county %>% 
+  select(-starts_with("X")) %>% ## drop the uncoded variables
+  cbind(industry) ## merge columns with the new renamed variables
+
+library(janitor)
+county <- county %>% clean_names()
 
 ```
 
-The file we downloaded includes all the counties in the US. Let's only select North Carolina. We'll then visualize the the top 15 counties by total job loss using a [lollipop plot.](https://www.r-graph-gallery.com/lollipop-plot.html) 
+## Where are North Carolina's 'hadest hit' counties?
+
+Let's visualize the top 15 counties by total job loss using a [lollipop plot.](https://www.r-graph-gallery.com/lollipop-plot.html) 
 
 ```{r, warning=FALSE, message=FALSE}
-covid_county_NC <- covid_county %>%
-  filter(state_name =="North Carolina")
-
-county_viz_losstotal <- covid_county_NC %>%
-  arrange(desc(Total_Job_Loss)) %>% ## put highest job loss counties at the top
-  top_n(Total_Job_Loss,n=15) %>% ## select top 15
-  select(county_name,Total_Job_Loss) %>%
-  ggplot(aes(x=reorder(county_name,Total_Job_Loss),y=Total_Job_Loss)) +
+county_viz_losstotal <- county %>%
+  arrange(desc(total_job_loss_index)) %>% ## put highest job loss counties at the top
+  top_n(total_job_loss_index,n=15) %>% ## select top 15
+  select(county_name,total_job_loss_index) %>%
+  ggplot(aes(x=reorder(county_name,total_job_loss_index),y=total_job_loss_index)) + # have our counties descend by total job loss count
   geom_point() +
-  geom_segment(aes(x=county_name,xend=county_name,y=0,yend=Total_Job_Loss)) +
+  geom_segment(aes(x=county_name,xend=county_name,y=0,yend=total_job_loss_index)) +
   coord_flip() +
   theme_minimal() +
   scale_y_comma(limits=c(0,52000)) +
@@ -101,11 +99,11 @@ Unsurprisingly, job loss is highest in North Carolina's seven metro counties - w
 Let's use the [`tidycensus`](https://walkerke.github.io/tidycensus/articles/basic-usage.html) package to pull labor force estimates for each county in the state. If you're a longtime American Factfinder user ([RIP](https://data.census.gov/cedsci/deeplinks?url=https%3A%2F%2Ffactfinder.census.gov%2F&tid=GOVSTIMESERIES.CG00ORG01)), this is a great tool to quickly grab Census data over many years and for different geographies.
 
 ```{r, echo=FALSE}
-message("Note: The Tidycensus requires an API key, [which can be acquired here.](https://api.census.gov/data/key_signup.html)")
+message("**Note**: The Tidycensus requires an API key, [which can be acquired here.](https://api.census.gov/data/key_signup.html)")
 
 ```
 
-```{r, message=FALSE,warning=FALSE}
+```{r, message=FALSE,warning=FALSE,echo=FALSE}
 library(tidycensus)
 census_api_key("ad2c6554a53beeff954ff8a4b291b02f053d3d31",overwrite = TRUE)
 
@@ -120,19 +118,13 @@ county_laborforce <- get_acs(variables = c(civilian_lf = "B23025_003"), ## The v
                              geography="county") %>%
   mutate(NAME=str_remove(NAME, " County, North Carolina")) ## Clean up county name column so we can merge with the job loss dataframe
 
-
-covid_county_NC <- merge(covid_county_NC,
-                         county_laborforce,
-                         by.x='county_name',
-                         by.y ='NAME' )
+county <- merge(county, county_laborforce, by.x='county_name', by.y ='NAME') ## Merge with original county data
 
 ## Recreate job loss by county but as percentage of overall labor force
-
-county_viz_losslbf <- covid_county_NC %>%
-  mutate(pctlbf = Total_Job_Loss/estimate) %>% ## "Estimate" stands in for labor force
+county_viz_losslbf <- county %>%
+  mutate(pctlbf = total_job_loss_index/estimate) %>% ## "Estimate" stands in for labor force when pulled using TidyCensus
   arrange(desc(pctlbf)) %>%
   top_n(pctlbf,n=15) %>%
-  select(county_name,pctlbf) %>%
   ggplot(aes(x=reorder(county_name,pctlbf),y=pctlbf)) +
   geom_point() +
   geom_segment(aes(x=county_name,xend=county_name,y=0,yend=pctlbf)) +
@@ -149,34 +141,35 @@ county_viz_losslbf
 
 ```
 
-When we look at job loss as percentage of overall labor force, North Carolina's more rural counties are hardest hit by the economic fall out of Covid-19. Let's use the `tmap` package to compare these two graphs.
+When we look at job loss as percentage of overall labor force, North Carolina's more rural counties are hardest hit by the economic fall out of Covid-19. Let's use the `tmap` package to visualize the difference in these two metrics.
 
-```{r,message=FALSE}
-
+```{r,message=FALSE,warning=FALSE}
 library(tmap)
-map_county_totalloss <- covid_county_NC %>%
+
+## Create map of total loss
+map_county_totalloss <- county %>%
   tm_shape() +
-  tm_polygons(c("Total_Job_Loss"), # Variable we want to visualize
+  tm_polygons(c("total_job_loss_index"), # Variable we want to visualize
               title = c("Total Job Loss by County"),
               style= "cont",
               palette = "seq",
-              border.col = NULL) + # This formats the numbers in the legend
+              border.col = NULL) + 
   tm_legend(legend.position = c("left", "top"))
 
-map_county_pctlbf <- covid_county_NC %>%
-  mutate(pctlbf = (Total_Job_Loss/estimate)*100) %>%
+# Create map of job loss as percentage of labor force
+map_county_pctlbf <- county %>%
+  mutate(pctlbf = (total_job_loss_index/estimate)*100) %>%
   tm_shape() +
   tm_polygons(c("pctlbf"), # Variable we want to visualize
               title = c("Job Loss as % of Labor Force"),
               style= "cont",
               palette = "seq",
               border.col = NULL,
-              legend.format=c(list(fun=function(x) paste0(formatC(x, digits=0, format="f"), "%")))) + # This formats the numbers in the legend
+              legend.format=c(list(fun=function(x) paste0(formatC(x, digits=0, format="f"), "%")))) + # To convert numbers to percentages in the legend
   tm_legend(legend.position = c("left", "top"))
 
 library(grid) # Use the grid package the stack the two maps
 grid.newpage()
-
 pushViewport(viewport(layout = grid.layout(2,1)))
 print(map_county_totalloss,vp=viewport(layout.pos.row = 1))
 print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))
@@ -184,10 +177,91 @@ print(map_county_pctlbf,vp=viewport(layout.pos.row = 2))
 
 ```
 
-## What industries are hardest hit?
+## What neighborhoods are hardest hit?
+
+Not all industries are equally impacted by the pandemic. Food, hospitality, retail, and some health care subsectors have had to cut back or stop operations to help slow the spread of Covid-19. In North Carolina, over 140,000 of the low-income jobs lost occurred in food & accomodation industries, and nearly 90,000 were lost in retail industries.
+
+```{r,echo=TRUE,warning=FALSE,message=FALSE}
+county %>%
+  select(county_name, county_fips, state_name, variable, estimate, moe, max, tmax, everything()) %>% # We'll rearrange the columns to keep industries together
+  pivot_longer(cols=accomodation_and_food_services:public_administration, # Put industry columns into "long" format
+               names_to = "Industry", # Create new column that will contain industry names
+               values_to = "Job_Loss") %>% # New column for job loss estimates
+  # Let's clean up the industry names 
+  mutate(Industry = str_replace_all(Industry,"_"," "), # replace underscores with spaces
+         Industry = str_replace_all(Industry, "and", "&"), # replace 'and" with '&'
+         Industry = str_to_title(Industry), # capitalize industry names
+         Industry = recode(Industry, # Shorten admin support services industry name
+                           'Administrative & Support & Waste Management & Remediation Services' = "Admin & Support Services")) %>%
+  group_by(Industry) %>%
+  filter(Industry != "Total Job Loss Index") %>% # remove total jobs to avoid double counting
+  summarise(totaljobs = sum(Job_Loss)) %>%
+  ggplot(aes(x=reorder(Industry,totaljobs),y=totaljobs)) +
+  geom_point() +
+  geom_segment(aes(x=Industry,xend=Industry,y=0,yend=totaljobs)) +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_comma(limits = c(0,150000),
+                breaks = seq(0,140000,20000)) +
+  labs(x="",
+       y="Total Job Loss",
+       title="Estimated Job Loss from Covid-19: North Carolina",
+       subtitle = "By Industry, Jobs w/ salaries <$40k",
+       caption = "@FrankMuraca, Data Source: Urban Institute")
 
 
+```
 
-## Census Tract impact
+Up until now, we've been looking at state and county-wide job loss. What about at the neighborhood level? The Urban Institute also provides estimates for low-income job loss for Census tracts. Let's download that data and look the relationship between job loss and tract poverty rate. Many of these steps will be repeated from the county data. 
 
-Up until now, we've been using the Urban Institute estimates at the county level. Let's pivot 
+```{r setup & cleaning, warning=FALSE, message=FALSE}
+tract <- geojson_sf("https://ui-lodes-job-change-public.s3.amazonaws.com/job_loss_by_tract.geojson") %>% filter(substr(GEOID,1,2)==37)
+
+### Filter and rename variables based on codebook --------
+industry <- tract %>% select(starts_with("X"), -geometry) ## Break out industry variables into new dataframe
+
+names(industry) <- industry_codebook$lehd_name[match(names(industry),industry_codebook$lehd_var)] ### Replace industry variable names based on matched name from the codebook
+
+tract <- tract %>% 
+  select(-starts_with("X")) %>% ## drop the uncoded variables
+  cbind(industry) ## merge columns with the new renamed variables
+
+tract <- tract %>% clean_names()
+```
+
+```{r merge with census, warning=FALSE,message=FALSE}
+### Select census data for NC census tracts
+tract_pov <- get_acs(variables = c(population = "B17010_001", # total population
+                                   belowpov = "B17010_002", # population below poverty rate
+                                   civilian_lf = "B23025_003"), #civilian labor force
+                             year = 2018,
+                             state="NC",
+                             geography="tract") %>%
+  pivot_wider(id_cols=GEOID,  ## Pivot data frame to "wide" format so we can merge with the job loss dataframe
+              names_from = variable,
+              values_from = estimate) %>%
+  mutate(povrate = belowpov/population)
+
+tract <- merge(tract,tract_pov,
+                        by.x = "geoid",by.y="GEOID") %>%
+  mutate(pctlbf = total_job_loss_index/civilian_lf,
+         food_pctlbf = accomodation_and_food_services/civilian_lf)
+
+tract %>%
+  filter(pctlbf<.3, # remove outliers
+         povrate>0) %>%
+  ggplot(aes(x=povrate,y=pctlbf)) + 
+  geom_point(alpha=.3) +
+  geom_smooth(method = "loess") +
+  theme_minimal() +
+  scale_x_percent(breaks=seq(0,.7,.1)) +
+  scale_y_percent() +
+  labs(x="Tract Poverty Rate",
+       y="Job Loss as Percentage of Tract Labor Force",
+       title = "Estimated Job Loss from Covid-19: North Carolina Census Tracts",
+       subtitle="Total jobs w/ salaries <$40k as percentage of labor force",
+       caption = "@FrankMuraca, Data Source: Urban Institute")
+
+```
+
+Census tracts with higher poverty rates tend to have higher levels of low-income job loss. Based on research from other counties, we know that low-income individuals [are more likely to contract and die from Covid-19](https://www.nytimes.com/2020/03/15/world/europe/coronavirus-inequality.html). This initial look at job loss also shows that the economic impacts of the virus are also more severe in high-poverty areas. This insight should help policymakers direct both *health* and *economic recovery* resources [to these hardest hit communities.](https://shelterforce.org/2020/03/24/housing-policy-must-change-in-wake-of-covid-19/)  

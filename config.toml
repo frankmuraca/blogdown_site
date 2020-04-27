@@ -8,11 +8,12 @@ disqusShortname = ""
 ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 [permalinks]
-    post = "/:year/:month/:day/:slug/"
+    post = "/post/:slug/"
 
 [[menu.main]]
     name = "About"
     url = "/about/"
+    weight=-1
 [[menu.main]]
     name = "Posts"
     url = "/post/"
@@ -28,7 +29,9 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 [params]
     description = "Helping planners understand their communities with data & analytics"
-    n_posts_front = 5
+    show_post_front = true
+    n_post_front = 5
+    show_projects_front = true
     # Change contactHeader text
     # Or comment out to use <hr> instead
     contactHeader = "Contact Me"

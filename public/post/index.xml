@@ -6,10 +6,19 @@
     <description>Recent content in Posts on Planning with Data</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 25 Apr 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 28 Apr 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Federal eviction moratoriums in NC</title>
+      <link>/post/federal-eviction-moratoriums-in-nc/</link>
+      <pubDate>Tue, 28 Apr 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/federal-eviction-moratoriums-in-nc/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Measuring NC job loss from Covid-19</title>
